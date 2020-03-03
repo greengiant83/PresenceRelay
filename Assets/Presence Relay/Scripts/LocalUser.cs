@@ -11,13 +11,13 @@ public class LocalUser : MonoBehaviour
 
     private CharacterPoseInfo pose;
 
-    void LateUpdate()
+    public CharacterPoseInfo Pose => pose;
+
+    public void UpdatePoseInfo()
     {
         pose.SocketId = Parent.SocketId;
         pose.Head.FromTransform(Head);
         pose.LeftController.FromTransform(LeftController);
         pose.RightController.FromTransform(RightController);
-
-        Parent.TransmitLocalUser(pose);
     }
 }

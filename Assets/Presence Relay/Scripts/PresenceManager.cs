@@ -7,7 +7,10 @@ public class PresenceManager : MonoBehaviour
 {
     public SocketIOController io;
     public GameObject RemoteUserPrefab;
+    public LocalUser LocalUser;
+    public string RoomName = "PresenceRelay";
     public string SocketId;
+    public float TransmitRateInSeconds = 0.1f;
 
     private Dictionary<string, RemoteUser> remoteUsers = new Dictionary<string, RemoteUser>();
     private bool isReady;
@@ -20,17 +23,17 @@ public class PresenceManager : MonoBehaviour
         io.On("💬listeners", onListenersReceived);
         io.On("💬peerjoin", onPeerJoined);
         io.On("💬peerdrop", onPeerDropped);
-
         io.On("userPose", onUserPoseReceived);
-
         io.Connect();
+
+        transmit();
     }
 
     #region -- Server Messages --
     private void onConnect(SocketIOEvent e)
     {
         Debug.Log("Socket connected");
-        io.Emit("💬join", "\"exampleRoom\"");
+        io.Emit("💬join", quote(RoomName));
         io.Emit("💬whoami");
     }
 
@@ -82,17 +85,19 @@ public class PresenceManager : MonoBehaviour
         var userPoseInfo = JsonUtility.FromJson<CharacterPoseInfo>(e.data);
         remoteUsers[userPoseInfo.SocketId].UpdatePose(userPoseInfo);
     }
-
-    #region -- Public Methods --
-    public void TransmitLocalUser(CharacterPoseInfo PoseInfo)
-    {
-        if (!isReady) return;
-
-        io.Emit("userPose", JsonUtility.ToJson(PoseInfo));
-    }
-    #endregion
-
+    
     #region -- Private Methods --
+    void transmit()
+    {
+        if (isReady)
+        {
+            LocalUser.UpdatePoseInfo();
+            io.Emit("userPose", JsonUtility.ToJson(LocalUser.Pose));
+        }
+
+        Invoke("transmit", TransmitRateInSeconds);
+    }
+
     void addRemoteUser(string socketId)
     {
         //if (socketId == this.SocketId) return; //TODO: reenable this when local mirror testing is complete
@@ -127,6 +132,11 @@ public class PresenceManager : MonoBehaviour
             s = s.Substring(1, s.Length- 2);
         }
         return s;
+    }
+
+    private string quote(string s)
+    {
+        return "\"" + s + "\"";
     }
     #endregion
 }

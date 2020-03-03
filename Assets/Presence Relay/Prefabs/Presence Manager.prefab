@@ -45,8 +45,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   io: {fileID: 5180492150725577853}
-  RemoteUserPrefab: {fileID: 1453896518141214581, guid: d9ff639d8add453418497320ff603300,
+  RemoteUserPrefab: {fileID: 4509426468707376472, guid: 2b0fdd2c1e3dac24cb957826566b0271,
     type: 3}
+  LocalUser: {fileID: 0}
+  RoomName: PresenceRelay
+  SocketId: 
+  TransmitRateInSeconds: 0.1
 --- !u!1001 &5180492150715739333
 PrefabInstance:
   m_ObjectHideFlags: 0
