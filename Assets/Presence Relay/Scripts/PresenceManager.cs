@@ -1,10 +1,16 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 using UnitySocketIO.Events;
+
+[System.Serializable]
+public class PeerEvent : UnityEvent<RemoteUser> { }
 
 public class PresenceManager : MonoBehaviour
 {
+    public PeerEvent OnPeerJoined;
+    public PeerEvent OnPeerDropped;
     public SocketIOController io;
     public GameObject RemoteUserPrefab;
     public LocalUser LocalUser;
@@ -83,7 +89,14 @@ public class PresenceManager : MonoBehaviour
     private void onUserPoseReceived(SocketIOEvent e)
     {
         var userPoseInfo = JsonUtility.FromJson<CharacterPoseInfo>(e.data);
-        remoteUsers[userPoseInfo.SocketId].UpdatePose(userPoseInfo);
+        if (remoteUsers.ContainsKey(userPoseInfo.SocketId))
+        {
+            remoteUsers[userPoseInfo.SocketId].UpdatePose(userPoseInfo);
+        }
+        else
+        {
+            Debug.Log("Invalid socket id: " + userPoseInfo.SocketId);
+        }
     }
     
     #region -- Private Methods --
@@ -100,7 +113,7 @@ public class PresenceManager : MonoBehaviour
 
     void addRemoteUser(string socketId)
     {
-        //if (socketId == this.SocketId) return; //TODO: reenable this when local mirror testing is complete
+        if (socketId == this.SocketId) return;
         if (remoteUsers.ContainsKey(socketId)) return;
 
         var remoteUserObject = Instantiate(RemoteUserPrefab);
@@ -110,8 +123,11 @@ public class PresenceManager : MonoBehaviour
         remoteUser.SocketId = socketId;
         remoteUser.gameObject.name = "Remote User: " + socketId;
         remoteUser.transform.SetParent(this.transform);
-        remoteUser.transform.localPosition = Random.insideUnitSphere;
+        remoteUser.transform.localPosition = new Vector3(Random.Range(-0.5f, 0.5f), 0, 0);
+        remoteUser.transform.localRotation = Quaternion.identity;
         remoteUsers.Add(socketId, remoteUser);
+
+        OnPeerJoined.Invoke(remoteUser);
     }
 
     void removeRemoteUser(string socketId)
@@ -119,6 +135,7 @@ public class PresenceManager : MonoBehaviour
         if (!remoteUsers.ContainsKey(socketId)) return;
 
         var remoteUser = remoteUsers[socketId];
+        OnPeerDropped.Invoke(remoteUser);
         Destroy(remoteUser.gameObject);
     }
 
